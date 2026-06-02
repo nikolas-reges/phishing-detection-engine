@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phishing URL Analyzer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #081015;
+      --bg-2: #0c151d;
+      --panel: #111d26;
+      --panel-2: #14232f;
+      --line: #223744;
+      --line-strong: #315064;
+      --text: #e7f2f4;
+      --muted: #8aa1ad;
+      --green: #35d07f;
+      --yellow: #f0c44b;
+      --orange: #ff8d42;
+      --red: #ff4d68;
+      --cyan: #48d8f0;
+      --shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --radius: 8px;
+      --font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(72, 216, 240, 0.08), transparent 360px),
+        radial-gradient(circle at top left, rgba(53, 208, 127, 0.08), transparent 300px),
+        var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      letter-spacing: 0;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 36px 36px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent 72%);
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      text-transform: uppercase;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border: 1px solid rgba(72, 216, 240, 0.45);
+      background: linear-gradient(135deg, rgba(72, 216, 240, 0.16), rgba(53, 208, 127, 0.12));
+      border-radius: var(--radius);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 0 28px rgba(72, 216, 240, 0.18);
+    }
+
+    .brand-mark svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--cyan);
+    }
+
+    .status-pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(17, 29, 38, 0.72);
+      white-space: nowrap;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .panel {
+      background: rgba(17, 29, 38, 0.88);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .analyzer {
+      padding: 26px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 5vw, 4.4rem);
+      line-height: 0.96;
+      max-width: 800px;
+    }
+
+    .lead {
+      max-width: 760px;
+      color: var(--muted);
+      line-height: 1.65;
+      margin: 0 0 28px;
+      font-size: 1rem;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      min-height: 54px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line-strong);
+      background: #09131a;
+      color: var(--text);
+      outline: none;
+      padding: 0 16px;
+      font: 500 1rem var(--font);
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    input:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(72, 216, 240, 0.12);
+    }
+
+    button {
+      min-height: 54px;
+      border: 0;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #48d8f0, #35d07f);
+      color: #041014;
+      padding: 0 20px;
+      font: 900 0.95rem var(--font);
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: transform 150ms ease, filter 150ms ease, opacity 150ms ease;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.72;
+      transform: none;
+    }
+
+    .progress-wrap {
+      margin-top: 18px;
+      min-height: 34px;
+    }
+
+    .progress-track {
+      height: 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #081015;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--cyan), var(--green), var(--yellow));
+      border-radius: inherit;
+      box-shadow: 0 0 20px rgba(72, 216, 240, 0.35);
+      transition: width 180ms ease;
+    }
+
+    .progress-caption {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 8px;
+      min-height: 16px;
+    }
+
+    .intel {
+      padding: 20px;
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .intel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 14px;
+    }
+
+    .intel-title {
+      margin: 0;
+      font-size: 0.92rem;
+      text-transform: uppercase;
+    }
+
+    .pulse {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 0 rgba(53, 208, 127, 0.65);
+      animation: pulse 1.6s infinite;
+    }
+
+    @keyframes pulse {
+      70% {
+        box-shadow: 0 0 0 12px rgba(53, 208, 127, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(53, 208, 127, 0);
+      }
+    }
+
+    .signal-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .signal {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: rgba(8, 16, 21, 0.55);
+      min-height: 82px;
+    }
+
+    .signal span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .signal strong {
+      font-size: 1.4rem;
+      color: var(--text);
+    }
+
+    .results {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: minmax(280px, 0.36fr) minmax(0, 0.64fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .score-panel {
+      padding: 22px;
+      position: sticky;
+      top: 18px;
+    }
+
+    .score-ring {
+      --score-color: var(--green);
+      --score-deg: 0deg;
+      width: min(230px, 70vw);
+      aspect-ratio: 1;
+      margin: 8px auto 18px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, #0d1820 0 58%, transparent 59%),
+        conic-gradient(var(--score-color) var(--score-deg), #20323d 0deg);
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      box-shadow: inset 0 0 28px rgba(0,0,0,0.35), 0 0 36px color-mix(in srgb, var(--score-color), transparent 78%);
+    }
+
+    .score-core {
+      text-align: center;
+    }
+
+    .score-number {
+      display: block;
+      font-size: 3.2rem;
+      line-height: 1;
+      font-weight: 900;
+      color: var(--score-color);
+    }
+
+    .score-label {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+
+    .risk-level {
+      text-align: center;
+      font-size: 1.15rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: var(--score-color);
+      margin-bottom: 12px;
+    }
+
+    .summary {
+      color: var(--muted);
+      line-height: 1.55;
+      text-align: center;
+      margin: 0 0 18px;
+    }
+
+    .meta-table {
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+      display: grid;
+      gap: 10px;
+      font-size: 0.8rem;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      color: var(--muted);
+    }
+
+    .meta-row strong {
+      color: var(--text);
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .alerts-panel {
+      padding: 22px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 1rem;
+      text-transform: uppercase;
+    }
+
+    .count {
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+    }
+
+    .alert-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .alert-card {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--alert-color, var(--cyan));
+      border-radius: var(--radius);
+      background: rgba(8, 16, 21, 0.58);
+      padding: 16px;
+      animation: rise 260ms ease both;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .alert-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 10px;
+    }
+
+    .alert-card h3 {
+      margin: 0;
+      font-size: 0.98rem;
+    }
+
+    .severity {
+      color: var(--alert-color, var(--cyan));
+      border: 1px solid color-mix(in srgb, var(--alert-color), transparent 55%);
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .alert-card p {
+      color: var(--muted);
+      line-height: 1.55;
+      margin: 0 0 10px;
+      font-size: 0.9rem;
+    }
+
+    .evidence {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .evidence code {
+      color: var(--text);
+      overflow-wrap: anywhere;
+      text-align: right;
+    }
+
+    .empty-state {
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+      padding: 26px;
+      text-align: center;
+      color: var(--muted);
+      background: rgba(8, 16, 21, 0.45);
+      line-height: 1.5;
+    }
+
+    .error {
+      margin-top: 14px;
+      color: var(--red);
+      min-height: 20px;
+      font-size: 0.88rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 920px) {
+      .hero,
+      .results {
+        grid-template-columns: 1fr;
+      }
+
+      .score-panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .shell {
+        width: min(100% - 20px, 1180px);
+        padding-top: 18px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .signal-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .analyzer,
+      .intel,
+      .score-panel,
+      .alerts-panel {
+        padding: 18px;
+      }
+
+      h1 {
+        font-size: 2.35rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar" aria-label="Application status">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z"></path>
+            <path d="M9 12l2 2 4-5"></path>
+          </svg>
+        </div>
+        <span>Phishing URL Analyzer</span>
+      </div>
+      <div class="status-pill">SOC URL Triage Console</div>
+    </header>
+
+    <section class="hero" aria-label="URL analysis">
+      <div class="panel analyzer">
+        <h1>Analyze suspicious URLs before they bite.</h1>
+        <p class="lead">Submit a URL for weighted phishing checks covering deceptive structure, unsafe transport, suspicious domains, keyword lures, and obfuscation patterns.</p>
+
+        <form id="analyzeForm" novalidate>
+          <label for="urlInput">URL to analyze</label>
+          <div class="input-row">
+            <input id="urlInput" name="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://example.com/login" required>
+            <button id="analyzeButton" type="submit">Analyze</button>
+          </div>
+          <div class="progress-wrap" aria-live="polite">
+            <div class="progress-track" aria-hidden="true">
+              <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <div id="progressCaption" class="progress-caption">Awaiting URL sample.</div>
+          </div>
+          <div id="errorMessage" class="error" role="alert"></div>
+        </form>
+      </div>
+
+      <aside class="panel intel" aria-label="Detection signals">
+        <div class="intel-header">
+          <h2 class="intel-title">Detection Matrix</h2>
+          <span class="pulse" aria-hidden="true"></span>
+        </div>
+        <div class="signal-grid">
+          <div class="signal"><span>Indicators</span><strong>10+</strong></div>
+          <div class="signal"><span>Scoring</span><strong>0-100</strong></div>
+          <div class="signal"><span>Output</span><strong>JSON</strong></div>
+          <div class="signal"><span>Runtime</span><strong>Flask</strong></div>
+        </div>
+      </aside>
+    </section>
+
+    <section id="results" class="results hidden" aria-label="Analysis results">
+      <aside class="panel score-panel">
+        <div id="scoreRing" class="score-ring">
+          <div class="score-core">
+            <span id="scoreNumber" class="score-number">0</span>
+            <span class="score-label">Risk Score</span>
+          </div>
+        </div>
+        <div id="riskLevel" class="risk-level">Safe</div>
+        <p id="summary" class="summary">No configured phishing indicators were detected.</p>
+        <div class="meta-table" aria-label="URL metrics">
+          <div class="meta-row"><span>Host</span><strong id="hostMeta">-</strong></div>
+          <div class="meta-row"><span>Scheme</span><strong id="schemeMeta">-</strong></div>
+          <div class="meta-row"><span>Length</span><strong id="lengthMeta">-</strong></div>
+          <div class="meta-row"><span>Checked</span><strong id="checkedMeta">-</strong></div>
+        </div>
+      </aside>
+
+      <div class="panel alerts-panel">
+        <div class="section-title">
+          <h2>Triggered Alerts</h2>
+          <span id="alertCount" class="count">0 alerts</span>
+        </div>
+        <div id="alertList" class="alert-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("analyzeForm");
+    const input = document.getElementById("urlInput");
+    const button = document.getElementById("analyzeButton");
+    const progressBar = document.getElementById("progressBar");
+    const progressCaption = document.getElementById("progressCaption");
+    const errorMessage = document.getElementById("errorMessage");
+    const results = document.getElementById("results");
+    const scoreRing = document.getElementById("scoreRing");
+    const scoreNumber = document.getElementById("scoreNumber");
+    const riskLevel = document.getElementById("riskLevel");
+    const summary = document.getElementById("summary");
+    const hostMeta = document.getElementById("hostMeta");
+    const schemeMeta = document.getElementById("schemeMeta");
+    const lengthMeta = document.getElementById("lengthMeta");
+    const checkedMeta = document.getElementById("checkedMeta");
+    const alertCount = document.getElementById("alertCount");
+    const alertList = document.getElementById("alertList");
+
+    const colorByLevel = {
+      Safe: "#35d07f",
+      Suspicious: "#f0c44b",
+      Dangerous: "#ff8d42",
+      Critical: "#ff4d68"
+    };
+
+    const severityColors = {
+      low: "#48d8f0",
+      medium: "#f0c44b",
+      high: "#ff8d42",
+      critical: "#ff4d68"
+    };
+
+    const scanSteps = [
+      "Parsing URL structure.",
+      "Inspecting host and subdomains.",
+      "Checking transport and TLD reputation.",
+      "Scanning for lure keywords.",
+      "Detecting obfuscation markers.",
+      "Calculating weighted risk score."
+    ];
+
+    let progressTimer = null;
+
+    function setBusy(isBusy) {
+      button.disabled = isBusy;
+      button.textContent = isBusy ? "Scanning" : "Analyze";
+      input.disabled = isBusy;
+    }
+
+    function startProgress() {
+      let step = 0;
+      let width = 8;
+      progressBar.style.width = "8%";
+      progressCaption.textContent = scanSteps[0];
+      clearInterval(progressTimer);
+      progressTimer = setInterval(() => {
+        step = Math.min(step + 1, scanSteps.length - 1);
+        width = Math.min(width + 15, 92);
+        progressBar.style.width = `${width}%`;
+        progressCaption.textContent = scanSteps[step];
+      }, 170);
+    }
+
+    function finishProgress(message) {
+      clearInterval(progressTimer);
+      progressBar.style.width = "100%";
+      progressCaption.textContent = message;
+      setTimeout(() => {
+        progressBar.style.width = "0%";
+      }, 650);
+    }
+
+    function escapeText(value) {
+      return String(value ?? "");
+    }
+
+    function setScore(report) {
+      const score = Number(report.risk_score) || 0;
+      const level = report.risk_level || "Safe";
+      const color = colorByLevel[level] || colorByLevel.Safe;
+      const degrees = Math.round((score / 100) * 360);
+
+      scoreRing.style.setProperty("--score-color", color);
+      scoreRing.style.setProperty("--score-deg", `${degrees}deg`);
+      scoreNumber.textContent = score;
+      riskLevel.textContent = level;
+      summary.textContent = report.summary || "";
+    }
+
+    function renderAlerts(alerts) {
+      alertList.innerHTML = "";
+      alertCount.textContent = `${alerts.length} ${alerts.length === 1 ? "alert" : "alerts"}`;
+
+      if (alerts.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty-state";
+        empty.textContent = "No detection checks triggered for this URL.";
+        alertList.appendChild(empty);
+        return;
+      }
+
+      alerts.forEach((alert, index) => {
+        const color = severityColors[alert.severity] || severityColors.medium;
+        const card = document.createElement("article");
+        card.className = "alert-card";
+        card.style.setProperty("--alert-color", color);
+        card.style.animationDelay = `${index * 45}ms`;
+
+        const head = document.createElement("div");
+        head.className = "alert-head";
+
+        const title = document.createElement("h3");
+        title.textContent = escapeText(alert.title);
+
+        const severity = document.createElement("span");
+        severity.className = "severity";
+        severity.textContent = `${escapeText(alert.severity)} +${escapeText(alert.weight)}`;
+
+        head.append(title, severity);
+
+        const description = document.createElement("p");
+        description.textContent = escapeText(alert.description);
+
+        const evidence = document.createElement("div");
+        evidence.className = "evidence";
+        const label = document.createElement("span");
+        label.textContent = "Evidence";
+        const code = document.createElement("code");
+        code.textContent = escapeText(alert.evidence);
+        evidence.append(label, code);
+
+        card.append(head, description, evidence);
+        alertList.appendChild(card);
+      });
+    }
+
+    function renderReport(report) {
+      setScore(report);
+      hostMeta.textContent = report.host || "-";
+      schemeMeta.textContent = (report.scheme || "-").toUpperCase();
+      lengthMeta.textContent = `${report.metrics?.url_length ?? "-"} chars`;
+      checkedMeta.textContent = report.checked_at ? new Date(report.checked_at).toLocaleString() : "-";
+      renderAlerts(report.alerts || []);
+      results.classList.remove("hidden");
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const url = input.value.trim();
+      errorMessage.textContent = "";
+
+      if (!url) {
+        errorMessage.textContent = "Enter a URL to analyze.";
+        input.focus();
+        return;
+      }
+
+      setBusy(true);
+      startProgress();
+
+      try {
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url })
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || "Unable to analyze the URL.");
+        }
+
+        renderReport(payload);
+        finishProgress("Analysis complete.");
+      } catch (error) {
+        errorMessage.textContent = error.message || "Analysis failed.";
+        finishProgress("Analysis stopped.");
+      } finally {
+        setBusy(false);
+      }
+    });
+  </script>
+</body>
+</html>
