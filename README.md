@@ -68,21 +68,21 @@ The engine evaluates URLs across multiple heuristic checks:
 ### 🔴 Critical Risk — Score 77
 > 4 indicators triggered: suspicious keywords, risky TLD, excessive hyphens, HTTP
 
-![Critical Risk Detection](docs/critical.png)
+![Critical Risk Detection](critical.png)
 
 ---
 
 ### 🟠 Dangerous Risk — Score 56
 > 3 indicators triggered: suspicious keywords, risky TLD, HTTP
 
-![Dangerous Risk Detection](docs/dangerous.png)
+![Dangerous Risk Detection](dangerous.png)
 
 ---
 
 ### 🟢 Safe — Score 0
 > 0 indicators triggered — clean URL, HTTPS, no suspicious patterns
 
-![Safe URL Detection](docs/safe.png)
+![Safe URL Detection](safe.png)
 
 ---
 
