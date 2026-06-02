@@ -1,234 +1,174 @@
-# Phishing Detection Engine
+# 🎣 Phishing Detection Engine
 
+<div align="center">
 
+![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=for-the-badge&logo=flask&logoColor=white)
+![Security](https://img.shields.io/badge/Focus-Blue_Team-00bcd4?style=for-the-badge&logo=shield&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
 
-Cybersecurity-focused phishing detection platform built with Python and Flask.
+**Heuristic-based phishing URL analyzer built for cybersecurity practice and Blue Team portfolio.**
 
+[🚀 Features](#-features) · [🔬 Detection Engine](#-detection-engine) · [📸 Screenshots](#-screenshots) · [⚙️ Installation](#️-installation)
 
+</div>
 
-!\[Dashboard Preview](phishing-preview.png)
+---
 
+## 📌 About
 
+Phishing Detection Engine is a cybersecurity lab project that analyzes URLs in real time and identifies phishing indicators using a **weighted heuristic scoring system**.
 
-\---
+Each indicator contributes to a **Risk Score (0–100)** that classifies the URL into one of four threat levels:
 
+| Score | Level | Description |
+|-------|-------|-------------|
+| 0–25 | 🟢 **Safe** | No significant indicators detected |
+| 26–50 | 🟡 **Suspicious** | Some indicators found — proceed with caution |
+| 51–75 | 🟠 **Dangerous** | Multiple indicators — likely phishing |
+| 76–100 | 🔴 **Critical** | High-confidence phishing — do not visit |
 
+---
 
-\## 📌 About The Project
+## 🚀 Features
 
+- 🔍 **Real-time URL analysis** via Flask REST API
+- 📊 **Weighted risk scoring** (0–100) with 10+ detection checks
+- 🚨 **Detailed alert cards** with evidence for each triggered indicator
+- 🌐 **TLD reputation analysis** — flags abused domains (`.xyz`, `.tk`, `.ml`, etc.)
+- 🔑 **Suspicious keyword detection** — `login`, `verify`, `account`, `wallet`, `password`...
+- 🏷️ **Typosquatting detection** — brand lookalike patterns
+- 🔒 **HTTP vs HTTPS validation**
+- 🔗 **Excessive hyphen detection** — common obfuscation technique
+- 📱 **Responsive dark mode SOC-style dashboard**
 
+---
 
-Phishing Detection Engine is a cybersecurity laboratory project designed to identify suspicious URLs using heuristic-based analysis techniques.
+## 🔬 Detection Engine
 
+The engine evaluates URLs across multiple heuristic checks:
 
+| Indicator | Weight | Description |
+|-----------|--------|-------------|
+| Suspicious Keywords | `HIGH +18` | Terms like `login`, `verify`, `update`, `wallet`, `confirm` |
+| Risky TLD | `HIGH +18` | `.xyz`, `.tk`, `.ml`, `.ga`, `.cf`, `.gq`, `.top`, `.click` |
+| Typosquatting | `HIGH +20` | Brand imitation using lookalike domains |
+| Brand Spoofing | `HIGH +20` | Mimics well-known organizations |
+| Excessive Subdomains | `MEDIUM +16` | More than 3 subdomain levels |
+| HTTP Usage | `MEDIUM +12` | No HTTPS encryption |
+| Excessive Hyphens | `MEDIUM +10` | More than 2 hyphens in domain |
+| URL Length | `LOW +8` | Over 75 characters |
+| IP Address as Host | `HIGH +20` | IP used instead of domain name |
+| Encoded Characters | `MEDIUM +10` | `%20`, `//`, `@` and obfuscation patterns |
 
-The platform evaluates multiple phishing indicators including:
+---
 
+## 📸 Screenshots
 
+### 🔴 Critical Risk — Score 77
+> 4 indicators triggered: suspicious keywords, risky TLD, excessive hyphens, HTTP
 
-\* Suspicious keywords
+![Critical Risk Detection](docs/critical.png)
 
-\* Risky top-level domains (TLDs)
+---
 
-\* Typosquatting attempts
+### 🟠 Dangerous Risk — Score 56
+> 3 indicators triggered: suspicious keywords, risky TLD, HTTP
 
-\* Excessive hyphen usage
+![Dangerous Risk Detection](docs/dangerous.png)
 
-\* HTTP instead of HTTPS
+---
 
-\* Brand impersonation patterns
+### 🟢 Safe — Score 0
+> 0 indicators triggered — clean URL, HTTPS, no suspicious patterns
 
+![Safe URL Detection](docs/safe.png)
 
+---
 
-Each indicator contributes to a weighted risk score, generating classifications such as Safe, Suspicious, Dangerous, or Critical.
-
-
-
-
-
-
-
-\---
-
-
-
-\## 🚀 Features
-
-
-
-\* Real-time URL analysis
-
-\* Weighted phishing scoring system
-
-\* Suspicious keyword detection
-
-\* Typosquatting detection
-
-\* Brand spoofing detection
-
-\* TLD reputation analysis
-
-\* HTTP security validation
-
-\* Hyphen abuse detection
-
-\* Risk classification engine
-
-\* Detailed alert reporting
-
-\* Modern Flask dashboard
-
-
-
-\---
-
-
-
-\## 🔬 Detection Rules
-
-
-
-The engine currently evaluates:
-
-
-
-| Indicator           | Description                                        |
-
-| ------------------- | -------------------------------------------------- |
-
-| Suspicious Keywords | Login, verify, update, banking, password, etc.     |
-
-| Risky TLDs          | .xyz, .tk, .ml and other frequently abused domains |
-
-| Typosquatting       | Brand imitation using lookalike characters         |
-
-| Brand Spoofing      | Attempts to mimic well-known organizations         |
-
-| HTTP Usage          | Lack of encrypted HTTPS connection                 |
-
-| Excessive Hyphens   | Common phishing URL obfuscation technique          |
-
-
-
-\---
-
-
-
-\## 📈 Example Analysis
-
-
-
-Example URL:
-
-
-
-http://secure-login-account-update-verify-security.xyz
-
-
-
-Detection Result:
-
-
-
-\* Critical Risk Score
-
-\* Suspicious Keywords Detected
-
-\* Risky TLD Detected
-
-\* HTTP Usage Detected
-
-\* Excessive Hyphen Usage Detected
-
-
-
-\---
-
-
-
-\## 🛠️ Technology Stack
-
-
-
-\* Python
-
-\* Flask
-
-\* HTML5
-
-\* CSS3
-
-\* JavaScript
-
-
-
-\---
-
-
-
-\## 📦 Installation
-
-
+## ⚙️ Installation
 
 ```bash
-
+# Clone the repository
 git clone https://github.com/nikolas-reges/phishing-detection-engine.git
-
-
-
 cd phishing-detection-engine
 
+# Create virtual environment
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Linux/macOS
 
-
+# Install dependencies
 pip install flask
 
-
-
+# Run the application
 python app.py
-
 ```
 
+Access at: **http://127.0.0.1:5003**
 
+---
 
-\---
+## 📁 Project Structure
 
+```
+phishing-detection-engine/
+├── app.py              ← Flask backend + detection engine
+├── docs/               ← Screenshots for README
+│   ├── critical.png
+│   ├── dangerous.png
+│   └── safe.png
+└── templates/
+    └── index.html      ← SOC-style dark mode dashboard
+```
 
+---
 
-\## 🎯 Learning Objectives
+## 🧪 Test URLs
 
+```bash
+# 🔴 CRITICAL — triggers 4+ indicators
+http://login.verify.secure.account-update.wallet.tk/confirm?user=admin
 
+# 🟠 DANGEROUS — typosquatting + risky TLD
+http://paypal-secure-login.xyz/account/verify
+
+# 🟢 SAFE — clean domain, HTTPS
+https://github.com
+```
+
+---
+
+## 🎯 Learning Objectives
 
 This project was built to practice:
 
+- 🔐 Cybersecurity detection logic and threat analysis
+- 🐍 Python backend development with Flask
+- 🌐 REST API design and JSON responses
+- 🎨 Frontend security dashboards
+- 🛡️ Heuristic-based security tooling
 
+---
 
-\* Secure coding concepts
+## 🔮 Future Improvements
 
-\* Cybersecurity detection logic
+- [ ] VirusTotal API integration for real-time threat intelligence
+- [ ] WHOIS lookup — flag recently registered domains
+- [ ] URL expander — resolve shortened links before analysis
+- [ ] Scan history with SQLite persistence
+- [ ] Browser extension version
 
-\* Threat analysis workflows
+---
 
-\* Flask web development
+## 👨‍💻 Author
 
-\* Python backend development
+**Nikolas Reges**  
+Cybersecurity Student · Blue Team & Pentest · Python
 
-\* Security tool prototyping
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-nikolas--reges-0077B5?style=flat&logo=linkedin)](https://linkedin.com/in/nikolas-reges-cyber)
+[![GitHub](https://img.shields.io/badge/GitHub-nikolas--reges-181717?style=flat&logo=github)](https://github.com/nikolas-reges)
 
+---
 
-
-\---
-
-
-
-\## 👨‍💻 Author
-
-
-
-Nikolas Reges
-
-
-
-Cybersecurity student building practical security projects and portfolio applications.
-
-
-
+> ⚠️ **Disclaimer:** This tool is intended for educational purposes and cybersecurity portfolio demonstration only. Use responsibly.
